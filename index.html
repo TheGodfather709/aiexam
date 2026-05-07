@@ -1,133 +1,428 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartExam AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="bg-zinc-950 text-white">
-    <div id="root"></div>
+import { useState } from 'react'
+import { 
+  BookOpen, Calculator, Microscope, Clock, Award, Share2, RotateCcw, 
+  CheckCircle, XCircle, Target 
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+interface Question {
+  id: number
+  question: string
+  options: string[]
+  correct: number
+  explanation: string
+}
 
-        // Your Question Bank
-        const questionBank = {
-            Math: {
-                Easy: [
-                    { id: 1, question: "What is 15 + 27?", options: ["40", "42", "45", "38"], correct: 1, explanation: "15 + 27 = 42." },
-                    { id: 2, question: "What is 8 × 7?", options: ["54", "56", "64", "49"], correct: 1, explanation: "8 multiplied by 7 equals 56." }
-                ],
-                Medium: [
-                    { id: 1, question: "What is the value of x in 3x + 7 = 22?", options: ["3", "5", "6", "4"], correct: 1, explanation: "Subtract 7: 3x = 15. Divide by 3: x = 5." }
-                ],
-                Hard: [
-                    { id: 1, question: "Solve for x: 2x² - 8x + 6 = 0", options: ["x=1,2", "x=1,3", "x=2,3", "x=3,4"], correct: 1, explanation: "Factor: 2(x-1)(x-3) = 0 → x=1 or x=3." }
-                ]
-            },
-            Science: {
-                Easy: [
-                    { id: 1, question: "What planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1, explanation: "Mars appears red due to iron oxide on its surface." }
-                ]
-            }
-        };
+type Subject = 'Math' | 'Science' | 'History'
+type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
-        function App() {
-            const [subject, setSubject] = useState('Math');
-            const [difficulty, setDifficulty] = useState('Medium');
-            const [questions, setQuestions] = useState([]);
-            const [userAnswers, setUserAnswers] = useState({});
-            const [showResults, setShowResults] = useState(false);
+const questionBank: Record<Subject, Record<Difficulty, Question[]>> = {
+  Math: {
+    Easy: [
+      { id: 1, question: "What is 15 + 27?", options: ["40", "42", "45", "38"], correct: 1, explanation: "15 + 27 = 42." },
+      { id: 2, question: "What is 8 × 7?", options: ["54", "56", "64", "49"], correct: 1, explanation: "8 multiplied by 7 equals 56." },
+      { id: 3, question: "What is the square root of 81?", options: ["7", "9", "8", "10"], correct: 1, explanation: "9 × 9 = 81." },
+      { id: 4, question: "What is 100 ÷ 4?", options: ["20", "25", "30", "24"], correct: 1, explanation: "100 divided by 4 is 25." },
+      { id: 5, question: "What is 12 - 5?", options: ["6", "7", "8", "5"], correct: 1, explanation: "12 minus 5 equals 7." },
+      { id: 6, question: "Which number is even?", options: ["13", "17", "24", "31"], correct: 2, explanation: "24 is divisible by 2." },
+      { id: 7, question: "What is 5²?", options: ["20", "25", "30", "15"], correct: 1, explanation: "5 squared equals 25." },
+      { id: 8, question: "What comes after 99?", options: ["98", "100", "101", "102"], correct: 1, explanation: "The next whole number after 99 is 100." },
+      { id: 9, question: "How many sides does a triangle have?", options: ["2", "3", "4", "5"], correct: 1, explanation: "A triangle has three sides." },
+      { id: 10, question: "What is half of 50?", options: ["20", "25", "30", "15"], correct: 1, explanation: "50 divided by 2 equals 25." },
+      { id: 11, question: "What is 6 + 9?", options: ["13", "14", "15", "16"], correct: 2, explanation: "6 + 9 equals 15." },
+      { id: 12, question: "What is 4 × 6?", options: ["20", "22", "24", "26"], correct: 2, explanation: "4 times 6 equals 24." },
+      { id: 13, question: "What is 36 ÷ 6?", options: ["4", "5", "6", "7"], correct: 2, explanation: "36 divided by 6 is 6." },
+      { id: 14, question: "What is 20 - 8?", options: ["10", "11", "12", "13"], correct: 2, explanation: "20 minus 8 equals 12." },
+      { id: 15, question: "Which is greater: 45 or 54?", options: ["45", "54", "They are equal", "Cannot tell"], correct: 1, explanation: "54 is greater than 45." }
+    ],
+    Medium: [
+      { id: 1, question: "What is the value of x in 3x + 7 = 22?", options: ["3", "5", "6", "4"], correct: 1, explanation: "Subtract 7: 3x = 15. Divide by 3: x = 5." },
+      { id: 2, question: "What is 15% of 240?", options: ["32", "34", "36", "38"], correct: 2, explanation: "0.15 × 240 = 36." },
+      { id: 3, question: "Solve: 2² + 3³", options: ["17", "31", "13", "23"], correct: 0, explanation: "4 + 27 = 31." },
+      { id: 4, question: "What is the area of a rectangle 9cm by 7cm?", options: ["56 cm²", "63 cm²", "72 cm²", "48 cm²"], correct: 1, explanation: "Area = length × width = 9 × 7 = 63 cm²." },
+      { id: 5, question: "What is the mean of 4, 8, 12, 16?", options: ["8", "9", "10", "11"], correct: 2, explanation: "Sum is 40, divided by 4 is 10." },
+      { id: 6, question: "Factor: x² - 9", options: ["(x-3)(x-3)", "(x+3)(x-3)", "(x+9)(x-9)", "(x-3)(x+9)"], correct: 1, explanation: "Difference of squares: (x + 3)(x - 3)." },
+      { id: 7, question: "What is 2/5 as a decimal?", options: ["0.25", "0.4", "0.5", "0.2"], correct: 1, explanation: "2 ÷ 5 = 0.4." },
+      { id: 8, question: "What is the next number: 2, 6, 18, 54...?", options: ["108", "162", "216", "120"], correct: 1, explanation: "Each term is multiplied by 3: 54 × 3 = 162." },
+      { id: 9, question: "Convert 3/4 to a percentage.", options: ["65%", "70%", "75%", "80%"], correct: 2, explanation: "3 ÷ 4 = 0.75 which is 75%." },
+      { id: 10, question: "What is the perimeter of a square with side 8?", options: ["24", "30", "32", "36"], correct: 2, explanation: "4 sides × 8 = 32." }
+    ],
+    Hard: [
+      { id: 1, question: "Solve for x: 2x² - 8x + 6 = 0", options: ["x=1,2", "x=1,3", "x=2,3", "x=3,4"], correct: 1, explanation: "Factor: 2(x-1)(x-3) = 0 → x=1 or x=3." },
+      { id: 2, question: "What is the derivative of x³ + 5x?", options: ["3x² + 5", "3x² + 5x", "x² + 5", "3x³ + 5"], correct: 0, explanation: "d/dx of x³ is 3x², of 5x is 5." },
+      { id: 3, question: "Find the sum of the first 10 natural numbers.", options: ["45", "50", "55", "60"], correct: 2, explanation: "Formula n(n+1)/2: 10 × 11 / 2 = 55." },
+      { id: 4, question: "What is sin(90°)?", options: ["0", "0.5", "1", "-1"], correct: 2, explanation: "Sine of 90 degrees is 1." },
+      { id: 5, question: "Simplify: log₁₀(1000)", options: ["1", "2", "3", "4"], correct: 2, explanation: "10³ = 1000, so log = 3." }
+    ]
+  },
+  Science: {
+    Easy: [
+      { id: 1, question: "What planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1, explanation: "Mars appears red due to iron oxide on its surface." },
+      { id: 2, question: "What gas do plants absorb from the air?", options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"], correct: 2, explanation: "Plants use CO₂ for photosynthesis." },
+      { id: 3, question: "How many bones are in the adult human body?", options: ["196", "206", "216", "186"], correct: 1, explanation: "The adult skeleton has 206 bones." },
+      { id: 4, question: "What is the chemical symbol for water?", options: ["H2O", "HO2", "O2H", "H2"], correct: 0, explanation: "Water is two hydrogen atoms and one oxygen." },
+      { id: 5, question: "Which organ pumps blood?", options: ["Liver", "Lungs", "Heart", "Brain"], correct: 2, explanation: "The heart circulates blood throughout the body." }
+    ],
+    Medium: [
+      { id: 1, question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Golgi apparatus"], correct: 1, explanation: "Mitochondria produce ATP energy." },
+      { id: 2, question: "What is the speed of light in vacuum?", options: ["300,000 km/s", "150,000 km/s", "450,000 km/s", "600,000 km/s"], correct: 0, explanation: "Light travels approximately 300,000 km per second." },
+      { id: 3, question: "Which element has atomic number 6?", options: ["Oxygen", "Carbon", "Nitrogen", "Hydrogen"], correct: 1, explanation: "Carbon has 6 protons." },
+      { id: 4, question: "What type of bond holds DNA strands together?", options: ["Covalent", "Ionic", "Hydrogen", "Metallic"], correct: 2, explanation: "Hydrogen bonds hold the base pairs." },
+      { id: 5, question: "What is the unit of electrical resistance?", options: ["Volt", "Ampere", "Ohm", "Watt"], correct: 2, explanation: "Resistance is measured in ohms." }
+    ],
+    Hard: [
+      { id: 1, question: "What is the Heisenberg Uncertainty Principle about?", options: ["Gravity", "Position and momentum", "Light speed", "Black holes"], correct: 1, explanation: "It states you cannot know both position and momentum precisely." },
+      { id: 2, question: "What is the pH of pure water?", options: ["5", "6", "7", "8"], correct: 2, explanation: "Pure water has a neutral pH of 7." },
+      { id: 3, question: "Which vitamin is synthesized by the skin when exposed to sunlight?", options: ["Vitamin A", "Vitamin C", "Vitamin D", "Vitamin K"], correct: 2, explanation: "UVB exposure creates Vitamin D." }
+    ]
+  },
+  History: {
+    Easy: [
+      { id: 1, question: "Who was the first President of the United States?", options: ["Thomas Jefferson", "George Washington", "Abraham Lincoln", "John Adams"], correct: 1, explanation: "George Washington served as the first US President." },
+      { id: 2, question: "In which year did World War II end?", options: ["1943", "1945", "1947", "1950"], correct: 1, explanation: "WWII ended in 1945." },
+      { id: 3, question: "Who discovered America?", options: ["Marco Polo", "Christopher Columbus", "Vasco da Gama", "Ferdinand Magellan"], correct: 1, explanation: "Christopher Columbus reached the Americas in 1492." },
+      { id: 4, question: "The Great Wall is located in which country?", options: ["Japan", "India", "China", "Korea"], correct: 2, explanation: "The Great Wall of China is famous." },
+      { id: 5, question: "Who painted the Mona Lisa?", options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Michelangelo"], correct: 2, explanation: "Leonardo da Vinci painted the Mona Lisa." }
+    ],
+    Medium: [
+      { id: 1, question: "What year did the French Revolution begin?", options: ["1776", "1789", "1799", "1804"], correct: 1, explanation: "The French Revolution started in 1789." },
+      { id: 2, question: "Who wrote the Declaration of Independence?", options: ["George Washington", "Benjamin Franklin", "Thomas Jefferson", "John Adams"], correct: 2, explanation: "Thomas Jefferson was the primary author." },
+      { id: 3, question: "What empire built the Colosseum?", options: ["Greek", "Roman", "Ottoman", "Byzantine"], correct: 1, explanation: "The Roman Empire built the Colosseum." },
+      { id: 4, question: "When did the Berlin Wall fall?", options: ["1985", "1987", "1989", "1991"], correct: 2, explanation: "The Berlin Wall fell in November 1989." },
+      { id: 5, question: "Who was known as the 'Iron Lady'?", options: ["Queen Elizabeth", "Margaret Thatcher", "Indira Gandhi", "Golda Meir"], correct: 1, explanation: "Margaret Thatcher was called the Iron Lady." }
+    ],
+    Hard: [
+      { id: 1, question: "The Treaty of Versailles was signed after which war?", options: ["WWI", "WWII", "Napoleonic Wars", "American Civil War"], correct: 0, explanation: "Signed in 1919 to end World War I." },
+      { id: 2, question: "Who led the Haitian Revolution?", options: ["Simon Bolivar", "Toussaint Louverture", "Che Guevara", "Jose Marti"], correct: 1, explanation: "Toussaint Louverture led the successful slave revolt." },
+      { id: 3, question: "What was the first successful English colony in America?", options: ["Plymouth", "Jamestown", "Roanoke", "Massachusetts Bay"], correct: 1, explanation: "Jamestown was founded in 1607." }
+    ]
+  }
+}
 
-            const handleGenerate = () => {
-                const pool = questionBank[subject][difficulty];
-                setQuestions(pool);
-                setUserAnswers({});
-                setShowResults(false);
-            };
+function getRandomQuestions(subject: Subject, difficulty: Difficulty): Question[] {
+  const pool = [...questionBank[subject][difficulty]]
+  const selected: Question[] = []
+  const needed = Math.min(10, pool.length)
+  
+  while (selected.length < needed) {
+    const idx = Math.floor(Math.random() * pool.length)
+    if (!selected.find(q => q.id === pool[idx].id)) {
+      selected.push(pool[idx])
+    }
+  }
+  return selected
+}
 
-            const handleAnswer = (qId, idx) => {
-                setUserAnswers(prev => ({ ...prev, [qId]: idx }));
-            };
+function App() {
+  const [subject, setSubject] = useState<Subject>('Math')
+  const [difficulty, setDifficulty] = useState<Difficulty>('Medium')
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({})
+  const [showResults, setShowResults] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-            return (
-                <div className="min-h-screen p-6 max-w-4xl mx-auto">
-                    <nav className="flex justify-between items-center mb-12 border-b border-zinc-800 pb-6">
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">SmartExam AI</h1>
-                        <span className="bg-emerald-500/10 text-emerald-400 px-4 py-1 rounded-full text-sm border border-emerald-500/20">100% Free</span>
-                    </nav>
+  const subjects: { name: Subject; icon: React.ReactNode; image: string }[] = [
+    { name: 'Math', icon: <Calculator className="w-8 h-8" />, image: '/images/math.jpg' },
+    { name: 'Science', icon: <Microscope className="w-8 h-8" />, image: '/images/science.jpg' },
+    { name: 'History', icon: <BookOpen className="w-8 h-8" />, image: '/images/history.jpg' }
+  ]
 
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8 shadow-xl">
-                        <h2 className="text-xl mb-6 font-semibold">Generate Your Exam</h2>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <select 
-                                className="bg-zinc-950 border border-zinc-700 p-4 rounded-xl"
-                                value={subject} onChange={(e) => setSubject(e.target.value)}
-                            >
-                                <option>Math</option>
-                                <option>Science</option>
-                            </select>
-                            <select 
-                                className="bg-zinc-950 border border-zinc-700 p-4 rounded-xl"
-                                value={difficulty} onChange={(e) => setDifficulty(e.target.value)}
-                            >
-                                <option>Easy</option>
-                                <option>Medium</option>
-                                <option>Hard</option>
-                            </select>
-                        </div>
-                        <button 
-                            onClick={handleGenerate}
-                            className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all"
-                        >
-                            GENERATE QUESTIONS →
-                        </button>
+  const difficulties: Difficulty[] = ['Easy', 'Medium', 'Hard']
+
+  const handleGenerate = () => {
+    setIsGenerating(true)
+    
+    setTimeout(() => {
+      const newQuestions = getRandomQuestions(subject, difficulty)
+      setQuestions(newQuestions)
+      setUserAnswers({})
+      setShowResults(false)
+      setIsGenerating(false)
+    }, 600)
+  }
+
+  const handleAnswer = (questionId: number, optionIndex: number) => {
+    setUserAnswers(prev => ({ ...prev, [questionId]: optionIndex }))
+  }
+
+  const handleSubmit = () => {
+    setShowResults(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const calculateScore = () => {
+    let correct = 0
+    questions.forEach(q => {
+      if (userAnswers[q.id] === q.correct) correct++
+    })
+    return correct
+  }
+
+  const score = calculateScore()
+  const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0
+
+  const handleShare = async () => {
+    const shareText = `I scored ${score}/${questions.length} (${percentage}%) on SmartExam AI!\n\nSubject: ${subject} | Difficulty: ${difficulty}\n\nTry it yourself at SmartExam AI!`
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My SmartExam AI Score',
+          text: shareText
+        })
+      } catch (err) {
+        navigator.clipboard.writeText(shareText)
+        alert('Score copied to clipboard!')
+      }
+    } else {
+      navigator.clipboard.writeText(shareText)
+      alert('Score copied to clipboard!')
+    }
+  }
+
+  const resetExam = () => {
+    setQuestions([])
+    setUserAnswers({})
+    setShowResults(false)
+  }
+
+  const answeredCount = Object.keys(userAnswers).length
+  const allAnswered = answeredCount === questions.length && questions.length > 0
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Navbar */}
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-lg sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+              <Target className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="font-semibold text-2xl tracking-tight">SmartExam AI</div>
+              <div className="text-[10px] text-zinc-500 -mt-1">FREE • INSTANT</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="px-4 py-1.5 bg-zinc-900 rounded-full text-emerald-400 border border-emerald-900/50 flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> 100% Free
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div className="relative h-[420px] flex items-center justify-center bg-zinc-900 overflow-hidden">
+        <img 
+          src="/images/hero.jpg" 
+          alt="SmartExam AI" 
+          className="absolute inset-0 w-full h-full object-cover opacity-60" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/90 to-zinc-950" />
+        
+        <div className="relative z-10 text-center px-6 max-w-3xl">
+          <div className="inline-block px-4 py-1 rounded-full bg-white/10 text-sm mb-4 tracking-[3px]">POWERED BY ADVANCED AI</div>
+          <h1 className="text-7xl font-semibold tracking-tighter mb-4">SmartExam AI</h1>
+          <p className="text-2xl text-zinc-300">Instantly generate high-quality multiple choice exams.</p>
+          <p className="mt-3 text-zinc-400">Free • No sign-up • Instant results with explanations</p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 pb-20">
+        {/* Generator Controls */}
+        <div className="-mt-8 relative z-20 bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="text-xl font-semibold">Create Your Exam</div>
+          </div>
+
+          {/* Subject Selection */}
+          <div className="mb-8">
+            <div className="text-sm uppercase tracking-widest text-zinc-500 mb-4">CHOOSE SUBJECT</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {subjects.map((s) => (
+                <button
+                  key={s.name}
+                  onClick={() => setSubject(s.name)}
+                  className={`group overflow-hidden rounded-2xl border transition-all text-left ${subject === s.name 
+                    ? 'border-blue-500 bg-zinc-950 ring-1 ring-blue-500/40' 
+                    : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}
+                >
+                  <div className="relative h-44">
+                    <img src={s.image} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80" />
+                    <div className="absolute bottom-0 left-0 p-5 flex items-center gap-3 text-white">
+                      <div className="text-blue-400">{s.icon}</div>
+                      <div className="font-semibold text-xl">{s.name}</div>
                     </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
-                    {questions.map((q, index) => (
-                        <div key={q.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
-                            <p className="text-lg mb-4 text-zinc-300">Q{index + 1}: {q.question}</p>
-                            <div className="space-y-2">
-                                {q.options.map((opt, i) => (
-                                    <button 
-                                        key={i}
-                                        onClick={() => handleAnswer(q.id, i)}
-                                        className={`w-full text-left p-4 rounded-xl border ${userAnswers[q.id] === i ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-800 bg-zinc-950'}`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+          {/* Difficulty Selection */}
+          <div className="mb-8">
+            <div className="text-sm uppercase tracking-widest text-zinc-500 mb-4">DIFFICULTY LEVEL</div>
+            <div className="flex gap-3">
+              {difficulties.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  className={`flex-1 py-4 px-8 rounded-2xl border text-lg font-medium transition-all ${difficulty === d 
+                    ? 'bg-white text-zinc-950 border-white' 
+                    : 'border-zinc-700 hover:bg-zinc-800'}`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                    {questions.length > 0 && !showResults && (
-                        <button 
-                            onClick={() => setShowResults(true)}
-                            className="w-full py-4 bg-white text-black rounded-xl font-bold mt-4"
-                        >
-                            SUBMIT ANSWERS
-                        </button>
-                    )}
+          <button 
+            onClick={handleGenerate} 
+            disabled={isGenerating}
+            className="w-full py-5 text-xl font-semibold rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 hover:brightness-110 disabled:opacity-70 transition-all active:scale-[0.985]"
+          >
+            {isGenerating ? "GENERATING QUESTIONS..." : "GENERATE 10 QUESTIONS →"}
+          </button>
+        </div>
 
-                    {showResults && (
-                        <div className="mt-8 p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl text-center">
-                            <h2 className="text-4xl font-bold text-emerald-400 mb-2">Exam Complete!</h2>
-                            <p className="text-zinc-400 mb-6">Check your answers above.</p>
-                            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-zinc-800 rounded-xl">Try Again</button>
-                        </div>
-                    )}
+        {/* Quiz Section */}
+        <AnimatePresence>
+          {questions.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="mt-12"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <div className="text-3xl font-semibold tracking-tight">{subject} • {difficulty}</div>
+                  <div className="text-zinc-400">10 Questions • Instant Scoring</div>
                 </div>
-            );
-        }
+                <button onClick={resetExam} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-700 hover:bg-zinc-900">
+                  <RotateCcw className="w-4 h-4" /> New Exam
+                </button>
+              </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+              {/* Questions */}
+              <div className="space-y-4">
+                {questions.map((q, index) => {
+                  const userAnswer = userAnswers[q.id]
+                  const isCorrect = userAnswer === q.correct
+
+                  return (
+                    <div key={q.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+                      <div className="flex gap-4">
+                        <div className="font-mono text-sm text-zinc-500 pt-1 w-8">Q{index + 1}</div>
+                        <div className="flex-1">
+                          <div className="text-xl font-medium mb-6 leading-tight">{q.question}</div>
+                          
+                          <div className="space-y-3">
+                            {q.options.map((option, i) => {
+                              const selected = userAnswer === i
+                              const showAnswer = showResults
+                              
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => !showResults && handleAnswer(q.id, i)}
+                                  disabled={showResults}
+                                  className={`w-full text-left px-6 py-4 rounded-2xl border flex items-center gap-3 transition-all text-lg
+                                    ${showAnswer 
+                                      ? i === q.correct 
+                                        ? "border-emerald-500 bg-emerald-950/40" 
+                                        : selected 
+                                          ? "border-red-500 bg-red-950/40" 
+                                          : "border-zinc-800"
+                                      : selected 
+                                        ? "border-blue-500 bg-zinc-800" 
+                                        : "border-zinc-800 hover:border-zinc-600"}`}
+                                >
+                                  <div className="font-mono text-xs px-3 py-1 bg-zinc-800 rounded-lg">{String.fromCharCode(65 + i)}</div>
+                                  <div className="flex-1">{option}</div>
+                                  
+                                  {showAnswer && i === q.correct && <CheckCircle className="text-emerald-400 w-5 h-5" />}
+                                  {showAnswer && selected && i !== q.correct && <XCircle className="text-red-400 w-5 h-5" />}
+                                </button>
+                              )
+                            })}
+                          </div>
+
+                          {/* Explanation */}
+                          {showResults && (
+                            <div className="mt-6 pl-1 text-sm text-zinc-400 border-l-2 border-zinc-700 pl-5">
+                              <span className="font-medium text-emerald-400">Explanation: </span> {q.explanation}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Action Bar */}
+              {!showResults ? (
+                <div className="mt-8 sticky bottom-8 flex justify-center">
+                  <button 
+                    onClick={handleSubmit}
+                    disabled={!allAnswered}
+                    className="px-16 py-4 text-lg font-semibold rounded-2xl bg-white text-black disabled:bg-zinc-700 disabled:text-zinc-400 flex items-center gap-3 transition-all"
+                  >
+                    SUBMIT ANSWERS <Award className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                /* Results */
+                <div className="mt-10 bg-zinc-900 border border-zinc-700 rounded-3xl p-9 text-center">
+                  <div className="text-emerald-400 mb-3 flex justify-center"><Award className="w-16 h-16" /></div>
+                  <div className="text-7xl font-semibold tabular-nums tracking-tighter mb-1">{score}<span className="text-5xl text-zinc-600">/{questions.length}</span></div>
+                  <div className="text-4xl text-emerald-400 font-medium mb-3">{percentage}%</div>
+                  <div className="text-xl text-zinc-400 mb-8">Excellent work! Here's your detailed breakdown.</div>
+
+                  <div className="flex gap-4 justify-center">
+                    <button 
+                      onClick={handleShare}
+                      className="flex items-center gap-3 px-8 py-4 border border-white/60 hover:bg-white hover:text-black transition rounded-2xl text-lg font-medium"
+                    >
+                      <Share2 className="w-5 h-5" /> Share Score
+                    </button>
+                    <button 
+                      onClick={resetExam}
+                      className="flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-medium text-lg"
+                    >
+                      <RotateCcw className="w-5 h-5" /> Try Another Exam
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Ad Spaces */}
+        <div className="mt-16 grid md:grid-cols-2 gap-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-7 flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Upgrade to Pro</div>
+              <div className="text-sm text-zinc-400">Unlimited exams + detailed analytics</div>
+            </div>
+            <div className="px-5 py-2 bg-white text-black text-sm font-medium rounded-full">Learn More</div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-7 flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Premium Study Pack</div>
+              <div className="text-sm text-zinc-400">Access 10,000+ practice questions</div>
+            </div>
+            <div className="px-5 py-2 bg-white text-black text-sm font-medium rounded-full">Get Started</div>
+          </div>
+        </div>
+      </div>
+
+      <footer className="text-center text-xs py-12 text-zinc-600 border-t border-zinc-900">SmartExam AI — Free for everyone. No data collected.</footer>
+    </div>
+  )
+}
+
+export default App
